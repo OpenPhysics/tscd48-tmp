@@ -99,21 +99,21 @@ test.describe('Error Scenarios - User Interface', () => {
   }: {
     page: Page;
   }) => {
-    await page.goto('/examples/');
+    // `serve` redirects *.html misses and returns its built-in 404 page
+    // (body contains "404", title usually does not).
+    const response = await page.goto('/examples/nonexistent.html');
+    expect(response?.status()).toBe(404);
 
-    // Try to navigate to non-existent example
-    await page.goto('/examples/nonexistent.html');
-
-    // Should show 404 or error page
-    const statusCode = await page.evaluate((): boolean => {
+    const showsNotFound = await page.evaluate((): boolean => {
+      const title = document.title.toLowerCase();
+      const body = document.body.textContent?.toLowerCase() ?? '';
       return (
-        document.title.includes('404') ||
-        (document.body.textContent?.includes('not found') ?? false)
+        title.includes('404') ||
+        body.includes('404') ||
+        body.includes('not found')
       );
     });
-
-    // We expect some kind of error indication
-    expect(statusCode).toBeTruthy();
+    expect(showsNotFound).toBeTruthy();
   });
 
   test('search with no results shows message', async ({
@@ -180,9 +180,10 @@ test.describe('Error Scenarios - JavaScript Errors', () => {
 
     await page.waitForTimeout(TIMEOUTS.MEDIUM);
 
-    // Page should still be functional
-    const isVisible = await page.locator('h1').isVisible();
-    expect(isVisible).toBe(true);
+    // Page should still be functional after an unhandled error (dev overlay
+    // injects its own <h1>, so don't assert on bare h1).
+    await expect(page.locator(SELECTORS.RUN_BTN)).toBeVisible();
+    await expect(page.locator(SELECTORS.CODE_MIRROR)).toBeVisible();
   });
 });
 
@@ -249,12 +250,16 @@ test.describe('Error Scenarios - Browser Compatibility', () => {
       delete (navigator as any).serial;
     });
 
-    await page.goto('/examples/simple-monitor.html');
+    // error-handling.html runs checkSupport() on load and logs the result
+    await page.goto('/examples/error-handling.html');
+    await page.waitForFunction(() => {
+      const text = document.body.textContent?.toLowerCase() ?? '';
+      return text.includes('not supported') || text.includes('is supported');
+    });
 
-    // Should show warning or error about unsupported browser
     const hasWarning = await page.evaluate((): boolean => {
       const text = document.body.textContent?.toLowerCase() ?? '';
-      return text.includes('not supported') || text.includes('browser');
+      return text.includes('not supported');
     });
 
     expect(hasWarning).toBeTruthy();

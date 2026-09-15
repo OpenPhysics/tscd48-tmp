@@ -15,15 +15,19 @@ interface Viewport {
 interface ScreenshotOptions {
   readonly fullPage: boolean;
   readonly animations: 'disabled';
+  readonly maxDiffPixelRatio: number;
 }
 
 const SCREENSHOT_OPTIONS: ScreenshotOptions = {
   fullPage: true,
   animations: 'disabled',
+  // Allow small antialiasing / font rasterization drift across CI runners.
+  maxDiffPixelRatio: 0.02,
 } as const;
 
 const COMPONENT_SCREENSHOT_OPTIONS = {
-  animations: 'disabled',
+  animations: 'disabled' as const,
+  maxDiffPixelRatio: 0.02,
 } as const;
 
 const VIEWPORTS: readonly Viewport[] = [
