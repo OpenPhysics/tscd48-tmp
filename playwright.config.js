@@ -6,9 +6,10 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
-  // Visual baselines differ across host OS/fonts (WSL vs ubuntu-latest).
-  // Capture/update them on the same runner CI uses before enabling in CI.
-  testIgnore: process.env.CI ? [/visual-regression\.spec\.ts/] : [],
+  // Visual checks have their own command and host-specific baselines.
+  testIgnore: process.env.VISUAL_REGRESSION
+    ? []
+    : [/visual-regression\.spec\.ts/],
   // Maximum time one test can run
   timeout: 30 * 1000,
   // Run tests in files in parallel
@@ -29,19 +30,11 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
 
-  // Configure projects for major browsers
+  // Keep E2E runs fast and aligned with the Chromium-based Web Serial API.
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
     },
   ],
 
