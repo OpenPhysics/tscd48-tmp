@@ -16,47 +16,47 @@ const EXAMPLES: readonly ExamplePage[] = [
   {
     name: 'Examples Index',
     path: '/examples/',
-    title: 'CD48 Examples',
+    title: 'CD48 Examples - Interactive Demos',
   },
   {
     name: 'Simple Monitor',
     path: '/examples/simple-monitor.html',
-    title: 'CD48 - Simple Channel Monitor',
+    title: 'CD48 Simple Monitor',
   },
   {
     name: 'Error Handling',
     path: '/examples/error-handling.html',
-    title: 'CD48 - Error Handling Demo',
+    title: 'CD48 Error Handling Example',
   },
   {
     name: 'Demo Mode',
     path: '/examples/demo-mode.html',
-    title: 'CD48 - Demo Mode',
+    title: 'CD48 Demo Mode - No Hardware Required',
   },
   {
     name: 'Multi-Channel Display',
     path: '/examples/multi-channel-display.html',
-    title: 'CD48 - Multi-Channel Display',
+    title: 'CD48 Multi-Channel Display',
   },
   {
     name: 'Continuous Monitoring',
     path: '/examples/continuous-monitoring.html',
-    title: 'CD48 - Continuous Monitoring',
+    title: 'CD48 Continuous Monitoring',
   },
   {
     name: 'Coincidence Measurement',
     path: '/examples/coincidence-measurement.html',
-    title: 'CD48 - Coincidence Measurement',
+    title: 'CD48 Coincidence Measurement',
   },
   {
     name: 'Graphing',
     path: '/examples/graphing.html',
-    title: 'CD48 - Interactive Graphing',
+    title: 'CD48 Real-Time Graphing',
   },
   {
     name: 'Data Export',
     path: '/examples/data-export.html',
-    title: 'CD48 - Data Export',
+    title: 'CD48 Data Export Example',
   },
   {
     name: 'Statistical Analysis',
@@ -304,9 +304,10 @@ test.describe('Accessibility', () => {
   });
 
   test('code playground has accessible labels', async ({ page }) => {
-    await page.goto('/examples/');
+    await page.goto('/examples/code-playground.html');
+    await page.waitForSelector(SELECTORS.CODE_MIRROR);
 
-    // Check for proper labels
+    // Template selector is wrapped in a <label>
     const labels = page.locator('label');
     const count = await labels.count();
     expect(count).toBeGreaterThan(0);

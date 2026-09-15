@@ -59,6 +59,9 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm ci
+      # Examples import from dist/; without a build, module scripts fail and
+      # CodeMirror never initializes (E2E waits on .CodeMirror forever).
+      - run: npm run build:unminified
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
