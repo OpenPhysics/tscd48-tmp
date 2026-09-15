@@ -6,6 +6,9 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
+  // Visual baselines differ across host OS/fonts (WSL vs ubuntu-latest).
+  // Capture/update them on the same runner CI uses before enabling in CI.
+  testIgnore: process.env.CI ? [/visual-regression\.spec\.ts/] : [],
   // Maximum time one test can run
   timeout: 30 * 1000,
   // Run tests in files in parallel
