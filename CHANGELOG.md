@@ -94,8 +94,6 @@ const v: Voltage = createVoltage(2.5); // Throws if invalid
 - JSDoc documentation generation
 - CI workflow for automated testing and linting
 - Release automation workflow
-- CONTRIBUTING.md with development guidelines
-- CODE_OF_CONDUCT.md for community standards
 - Multiple example applications:
   - Error handling example
   - Data export example (CSV/JSON)
