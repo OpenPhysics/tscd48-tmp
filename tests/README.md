@@ -174,7 +174,7 @@ Screenshots captured for:
 The `MockCD48` class simulates a real CD48 device without hardware:
 
 ```javascript
-import { MockCD48 } from './tests/mock-cd48.ts';
+import { MockCD48 } from './mock-cd48.ts';
 
 const cd48 = new MockCD48({
   autoIncrement: true,          // Auto-increment counts

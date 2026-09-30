@@ -25,13 +25,13 @@
   "excludeProtected": false,
   "excludeInternal": true,
   "name": "CD48 API Documentation",
-  "titleLink": "https://github.com/OpenPhysics/tscd48",
+  "titleLink": "https://github.com/OpenPhysics/tscd48-tmp",
   "navigationLinks": {
-    "GitHub": "https://github.com/OpenPhysics/tscd48",
+    "GitHub": "https://github.com/OpenPhysics/tscd48-tmp",
     "NPM": "https://www.npmjs.com/package/tscd48"
   },
   "sidebarLinks": {
-    "Troubleshooting": "https://github.com/OpenPhysics/tscd48/blob/main/TROUBLESHOOTING.md"
+    "Troubleshooting": "https://github.com/OpenPhysics/tscd48-tmp/blob/main/TROUBLESHOOTING.md"
   },
   "validation": {
     "notExported": false,

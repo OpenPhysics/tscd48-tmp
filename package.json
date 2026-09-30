@@ -71,7 +71,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OpenPhysics/tscd48.git"
+    "url": "git+https://github.com/OpenPhysics/tscd48-tmp.git"
   },
   "keywords": [
     "cd48",
@@ -97,9 +97,9 @@
   "author": "OpenPhysics Contributors",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/OpenPhysics/tscd48/issues"
+    "url": "https://github.com/OpenPhysics/tscd48-tmp/issues"
   },
-  "homepage": "https://github.com/OpenPhysics/tscd48#readme",
+  "homepage": "https://github.com/OpenPhysics/tscd48-tmp#readme",
   "publishConfig": {
     "access": "public"
   },

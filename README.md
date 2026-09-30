@@ -1,13 +1,13 @@
 # tscd48 - TypeScript Interface for CD48 Coincidence Counter
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/OpenPhysics/tscd48/workflows/CI/badge.svg)](https://github.com/OpenPhysics/tscd48/actions)
+[![CI](https://github.com/OpenPhysics/tscd48-tmp/workflows/CI/badge.svg)](https://github.com/OpenPhysics/tscd48-tmp/actions)
 [![codecov](https://codecov.io/gh/OpenPhysics/tscd48/branch/main/graph/badge.svg)](https://codecov.io/gh/OpenPhysics/tscd48)
 [![npm version](https://img.shields.io/npm/v/tscd48.svg)](https://www.npmjs.com/package/tscd48)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6.svg)](https://www.typescriptlang.org/)
 [![Chrome](https://img.shields.io/badge/Chrome-89+-green.svg)](https://www.google.com/chrome/)
 [![Edge](https://img.shields.io/badge/Edge-89+-blue.svg)](https://www.microsoft.com/edge)
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://openphysics.github.io/tscd48/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://openphysics.github.io/tscd48-tmp/)
 
 A comprehensive browser-based TypeScript library and web interface for controlling the [Red Dog Physics CD48 Coincidence Counter](https://www.reddogphysics.com/cd48.html) using the Web Serial API.
 
@@ -27,7 +27,7 @@ A comprehensive browser-based TypeScript library and web interface for controlli
 
 ## 🚀 Live Demo
 
-**[https://openphysics.github.io/tscd48/](https://openphysics.github.io/tscd48/)**
+**[https://openphysics.github.io/tscd48-tmp/](https://openphysics.github.io/tscd48-tmp/)**
 
 Open the link above in Chrome or Edge, connect your CD48 via USB, and click "Connect".
 
@@ -428,7 +428,7 @@ See [tests/README.md](tests/README.md) for detailed testing documentation.
 ### Setup
 
 ```bash
-git clone https://github.com/OpenPhysics/tscd48.git
+git clone https://github.com/OpenPhysics/tscd48-tmp.git
 cd tscd48
 npm install
 ```

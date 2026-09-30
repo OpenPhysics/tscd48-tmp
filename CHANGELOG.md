@@ -141,7 +141,7 @@ const v: Voltage = createVoltage(2.5); // Throws if invalid
 - MIT License
 - README.md with comprehensive documentation
 
-[Unreleased]: https://github.com/OpenPhysics/tscd48/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/OpenPhysics/tscd48/compare/v1.0.0...v2.0.0
-[1.0.0]: https://github.com/OpenPhysics/tscd48/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/OpenPhysics/tscd48/releases/tag/v0.1.0
+[Unreleased]: https://github.com/OpenPhysics/tscd48-tmp/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/OpenPhysics/tscd48-tmp/compare/v1.0.0...v2.0.0
+[1.0.0]: https://github.com/OpenPhysics/tscd48-tmp/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/OpenPhysics/tscd48-tmp/releases/tag/v0.1.0

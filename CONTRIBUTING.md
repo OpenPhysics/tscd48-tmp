@@ -29,7 +29,7 @@ Please be respectful and constructive in issues, pull requests, and reviews.
 3. **Add the upstream repository**:
 
    ```bash
-   git remote add upstream https://github.com/OpenPhysics/tscd48.git
+   git remote add upstream https://github.com/OpenPhysics/tscd48-tmp.git
    ```
 
 4. **Install dependencies**:
