@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Connection cleanup, a read race, and a calibration plateau-detection bug
+- Examples: added SRI for CDN scripts, escaped HTML in the error overlay, and bounded the firmware version regex
+
+### Changed
+
+- CI: lint, type-check, test, and build now run as one `verify` job on Node 24 (see `.github/BRANCH_PROTECTION.md`)
+- Reusable `dependency-review` and `codeql` workflows now come from `OpenPhysics/relay`
+
 ## [2.0.0] - 2025-01-18
 
 ### ⚠️ BREAKING CHANGES

@@ -69,9 +69,9 @@ Related to #
 - [ ] New and existing unit tests pass locally with my changes
 - [ ] Any dependent changes have been merged and published
 - [ ] I have updated the CHANGELOG.md
-- [ ] I have updated TypeScript definitions (cd48.d.ts) if applicable
-- [ ] Code has been formatted with Prettier (`npm run format`)
-- [ ] Code passes ESLint checks (`npm run lint`)
+- [ ] I have exported any new public types from `src/index.ts`
+- [ ] Code has been formatted with Biome (`npm run format`)
+- [ ] Code passes Biome lint checks (`npm run lint`)
 
 ## Screenshots (if applicable)
 

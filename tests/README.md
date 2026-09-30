@@ -6,16 +6,25 @@ Comprehensive test suite for the CD48 library including unit tests, integration 
 
 ```
 tests/
-├── e2e/                      # End-to-end tests
-│   ├── examples.spec.js      # Tests for all example pages
-│   ├── visual-regression.spec.js  # Visual regression tests
-│   ├── error-scenarios.spec.js    # Error handling tests
-│   ├── link-button-fuzzing.spec.ts  # Link/button fuzzing tests
-│   ├── FUZZING_README.md     # Fuzzing tests user guide
-│   └── FUZZING_RESULTS.md    # Latest fuzzing test results
+├── unit/                     # Unit tests (Vitest)
+│   ├── cd48.test.ts
+│   ├── errors.test.ts
+│   └── validation.test.ts
 ├── integration/              # Integration tests
-│   └── cd48-integration.test.js   # Mock hardware tests
-├── mock-cd48.js             # Mock CD48 device for testing
+│   └── cd48-integration.test.ts   # Mock hardware tests
+├── benchmarks/
+│   └── cd48.bench.ts         # Benchmarks (npm run test:bench)
+├── mocks/
+│   └── web-serial.ts         # Web Serial API mock
+├── e2e/                      # End-to-end tests (Playwright)
+│   ├── examples.spec.ts      # Tests for all example pages
+│   ├── main-interface.spec.ts     # Main interface tests
+│   ├── accessibility.spec.ts      # Accessibility tests
+│   ├── visual-regression.spec.ts  # Visual regression tests
+│   ├── error-scenarios.spec.ts    # Error handling tests
+│   ├── link-button-fuzzing.spec.ts  # Link/button fuzzing tests
+│   └── FUZZING_README.md     # Fuzzing tests user guide
+├── mock-cd48.ts             # Mock CD48 device for testing
 └── README.md                # This file
 ```
 
@@ -69,13 +78,11 @@ npm run test:e2e:update-snapshots     # Update baseline screenshots
 
 ### Unit Tests
 
-Located in project root and individual module directories:
+Located in `tests/unit/`:
 
 - Core CD48 functionality
 - Validation utilities
 - Error classes
-- Analysis tools
-- Calibration utilities
 
 ### Integration Tests
 
@@ -133,7 +140,6 @@ Automated testing of all interactive elements across all HTML pages:
 - ✅ Comprehensive inventory reporting
 
 See [tests/e2e/FUZZING_README.md](e2e/FUZZING_README.md) for detailed usage guide.
-See [tests/e2e/FUZZING_RESULTS.md](e2e/FUZZING_RESULTS.md) for latest test results.
 
 ### Error Scenario Tests
 
@@ -168,7 +174,7 @@ Screenshots captured for:
 The `MockCD48` class simulates a real CD48 device without hardware:
 
 ```javascript
-import { MockCD48 } from './tests/mock-cd48.js';
+import { MockCD48 } from './tests/mock-cd48.ts';
 
 const cd48 = new MockCD48({
   autoIncrement: true,          // Auto-increment counts
@@ -202,7 +208,7 @@ Visual tests capture screenshots and compare against baseline images.
    npm run test:e2e:update-snapshots
    ```
 
-2. Baselines are stored in `tests/e2e/*.spec.js-snapshots/`
+2. Baselines are stored in `tests/e2e/*.spec.ts-snapshots/`
 
 ### Running Visual Tests
 
@@ -220,9 +226,9 @@ npm run test:e2e:update-snapshots
 
 ### Screenshot Locations
 
-- Desktop: `tests/e2e/visual-regression.spec.js-snapshots/chromium/`
-- Mobile: `tests/e2e/visual-regression.spec.js-snapshots/chromium/*-mobile.png`
-- Tablet: `tests/e2e/visual-regression.spec.js-snapshots/chromium/*-tablet.png`
+- Desktop: `tests/e2e/visual-regression.spec.ts-snapshots/chromium/`
+- Mobile: `tests/e2e/visual-regression.spec.ts-snapshots/chromium/*-mobile.png`
+- Tablet: `tests/e2e/visual-regression.spec.ts-snapshots/chromium/*-tablet.png`
 
 ## Continuous Integration
 
@@ -234,11 +240,9 @@ Tests run automatically on:
 
 ### CI Configuration
 
-- Runs all test suites
-- Retries flaky tests (2 retries)
-- Uploads test artifacts
-- Generates coverage reports
-- Creates visual regression diffs
+- The `verify` job runs unit and integration tests with coverage (`npm run test:coverage`)
+- The `e2e` job (pull requests only) runs Playwright on Chromium with 2 retries
+- Uploads e2e failure artifacts when the e2e job fails
 
 ## Writing New Tests
 
@@ -315,7 +319,7 @@ test('my visual test', async ({ page }) => {
 
 ```bash
 # Run specific test file
-npm test tests/integration/cd48-integration.test.js
+npm test tests/integration/cd48-integration.test.ts
 
 # Run in watch mode
 npm test -- --watch
@@ -334,7 +338,7 @@ npm run test:e2e:headed
 npm run test:e2e:debug
 
 # Run specific test
-npm run test:e2e -- tests/e2e/examples.spec.js
+npm run test:e2e -- tests/e2e/examples.spec.ts
 
 # Run with trace
 npm run test:e2e -- --trace on
@@ -352,10 +356,8 @@ npm run test:e2e:report
 
 ## Test Metrics
 
-- **Total Tests**: 100+ across all suites
 - **E2E Coverage**: 11 example pages
 - **Visual Tests**: 15+ screenshots
-- **Integration Tests**: 20+ scenarios
 - **Error Scenarios**: 15+ cases
 
 ## Troubleshooting

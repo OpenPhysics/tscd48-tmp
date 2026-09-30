@@ -13,7 +13,7 @@ The library provides specific error types for different failure scenarios. All c
 Base class for all CD48-related errors.
 
 ```javascript
-import { CD48Error } from './errors.js';
+import { CD48Error } from 'tscd48';
 
 try {
   // CD48 operation
@@ -29,7 +29,7 @@ try {
 Thrown when the Web Serial API is not supported by the browser.
 
 ```javascript
-import { UnsupportedBrowserError } from './errors.js';
+import { UnsupportedBrowserError } from 'tscd48';
 
 if (!CD48.isSupported()) {
   throw new UnsupportedBrowserError();
@@ -42,7 +42,7 @@ if (!CD48.isSupported()) {
 Thrown when attempting an operation that requires a connected device.
 
 ```javascript
-import { NotConnectedError } from './errors.js';
+import { NotConnectedError } from 'tscd48';
 
 if (!cd48.isConnected()) {
   throw new NotConnectedError('getCounts');
@@ -59,7 +59,7 @@ Properties:
 Thrown when device connection fails.
 
 ```javascript
-import { ConnectionError } from './errors.js';
+import { ConnectionError } from 'tscd48';
 
 try {
   await cd48.connect();
@@ -80,7 +80,7 @@ Properties:
 Thrown when the user cancels the device selection dialog.
 
 ```javascript
-import { DeviceSelectionCancelledError } from './errors.js';
+import { DeviceSelectionCancelledError } from 'tscd48';
 
 try {
   await cd48.connect();
@@ -96,7 +96,7 @@ try {
 Thrown when a command times out waiting for a response.
 
 ```javascript
-import { CommandTimeoutError } from './errors.js';
+import { CommandTimeoutError } from 'tscd48';
 
 try {
   const version = await cd48.getVersion();
@@ -119,7 +119,7 @@ Properties:
 Thrown when the device returns an unexpected or malformed response.
 
 ```javascript
-import { InvalidResponseError } from './errors.js';
+import { InvalidResponseError } from 'tscd48';
 
 try {
   const counts = await cd48.getCounts();
@@ -141,7 +141,7 @@ Properties:
 Base class for parameter validation errors.
 
 ```javascript
-import { ValidationError } from './errors.js';
+import { ValidationError } from 'tscd48';
 
 try {
   validateChannel(10);
@@ -164,7 +164,7 @@ Properties:
 Thrown when a channel number is out of the valid range (0-7).
 
 ```javascript
-import { InvalidChannelError } from './errors.js';
+import { InvalidChannelError } from 'tscd48';
 
 try {
   await cd48.setChannel(10, true, true, true);
@@ -180,7 +180,7 @@ try {
 Thrown when a voltage is out of the valid range (0-4.08V).
 
 ```javascript
-import { InvalidVoltageError } from './errors.js';
+import { InvalidVoltageError } from 'tscd48';
 
 try {
   await cd48.setTriggerLevel(5.0);
@@ -196,7 +196,7 @@ try {
 Thrown when communication with the device fails.
 
 ```javascript
-import { CommunicationError } from './errors.js';
+import { CommunicationError } from 'tscd48';
 
 try {
   await cd48.sendCommand('VER\r');
@@ -214,12 +214,12 @@ Properties:
 
 ## Validation Functions
 
-The `validation.js` module provides functions for validating parameters before sending commands to the device.
+The validation module provides functions for validating parameters before sending commands to the device.
 
 ### Channel Validation
 
 ```javascript
-import { validateChannel, CHANNEL_MIN, CHANNEL_MAX } from './validation.js';
+import { validateChannel, CHANNEL_MIN, CHANNEL_MAX } from 'tscd48';
 
 // Valid channel (0-7)
 validateChannel(0); // OK
@@ -239,7 +239,7 @@ import {
   clampVoltage,
   VOLTAGE_MIN,
   VOLTAGE_MAX,
-} from './validation.js';
+} from 'tscd48';
 
 // Validate voltage (throws on invalid)
 validateVoltage(2.5); // OK
@@ -254,7 +254,7 @@ const voltage2 = clampVoltage(-0.5); // Returns 0.0
 ### Duration Validation
 
 ```javascript
-import { validateDuration } from './validation.js';
+import { validateDuration } from 'tscd48';
 
 validateDuration(1.0); // OK
 validateDuration(0.5); // OK
@@ -265,7 +265,7 @@ validateDuration(-1); // Throws ValidationError (must be > 0)
 ### Impedance Mode Validation
 
 ```javascript
-import { validateImpedanceMode } from './validation.js';
+import { validateImpedanceMode } from 'tscd48';
 
 validateImpedanceMode('highz'); // OK
 validateImpedanceMode('50ohm'); // OK
@@ -280,7 +280,7 @@ import {
   clampRepeatInterval,
   REPEAT_INTERVAL_MIN,
   REPEAT_INTERVAL_MAX,
-} from './validation.js';
+} from 'tscd48';
 
 validateRepeatInterval(1000); // OK
 validateRepeatInterval(50); // Throws ValidationError (min is 100)
@@ -329,7 +329,7 @@ try {
 Validate parameters before sending commands to catch errors early:
 
 ```javascript
-import { validateChannel, validateVoltage } from './validation.js';
+import { validateChannel, validateVoltage } from 'tscd48';
 
 async function setChannelConfiguration(channel, voltage) {
   // Validate before doing any work
@@ -451,8 +451,8 @@ When writing tests, you can use the error classes to verify error handling:
 
 ```javascript
 import { describe, it, expect } from 'vitest';
-import { InvalidChannelError } from './errors.js';
-import { validateChannel } from './validation.js';
+import { InvalidChannelError } from 'tscd48';
+import { validateChannel } from 'tscd48';
 
 describe('Channel Validation', () => {
   it('should throw InvalidChannelError for channel > 7', () => {

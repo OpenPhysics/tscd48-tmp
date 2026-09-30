@@ -8,16 +8,14 @@ This directory contains Git hooks managed by [Husky](https://typicode.github.io/
 
 Runs before each commit to ensure code quality:
 
-- Lints and auto-fixes JavaScript files with ESLint
-- Formats files with Prettier
+- Runs `biome check --write` on staged `*.{ts,js,json,md}` files (lint and format)
 - Only processes staged files (via lint-staged)
 
 **What happens:**
 
 ```bash
 🔍 Running pre-commit checks...
-✔ eslint --fix *.js
-✔ prettier --write **/*.{js,json,md,html}
+✔ biome check --write --no-errors-on-unmatched
 ```
 
 ### commit-msg
@@ -39,14 +37,17 @@ Validates commit messages follow Conventional Commits format:
 
 Runs before pushing to remote repository:
 
-- Executes all unit tests
-- Ensures tests pass
+- Biome check (`npm run format:check`)
+- TypeScript type check (`npm run typecheck`)
+- Unit tests (`npm test -- --run`)
 
 **What happens:**
 
 ```bash
-🧪 Running tests before push...
-✔ All tests passed
+🚀 Running pre-push checks...
+✅ Biome check passed
+✅ TypeScript check passed
+✅ Tests passed
 ```
 
 ## Bypassing Hooks
@@ -75,7 +76,7 @@ chmod +x .husky/commit-msg
 chmod +x .husky/pre-push
 ```
 
-### ESLint/Prettier errors?
+### Biome errors?
 
 Fix automatically:
 

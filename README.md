@@ -4,7 +4,7 @@
 [![CI](https://github.com/OpenPhysics/tscd48/workflows/CI/badge.svg)](https://github.com/OpenPhysics/tscd48/actions)
 [![codecov](https://codecov.io/gh/OpenPhysics/tscd48/branch/main/graph/badge.svg)](https://codecov.io/gh/OpenPhysics/tscd48)
 [![npm version](https://img.shields.io/npm/v/tscd48.svg)](https://www.npmjs.com/package/tscd48)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6.svg)](https://www.typescriptlang.org/)
 [![Chrome](https://img.shields.io/badge/Chrome-89+-green.svg)](https://www.google.com/chrome/)
 [![Edge](https://img.shields.io/badge/Edge-89+-blue.svg)](https://www.microsoft.com/edge)
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://openphysics.github.io/tscd48/)
@@ -22,7 +22,7 @@ A comprehensive browser-based TypeScript library and web interface for controlli
 - **Advanced analytics** - Statistical analysis, histograms, time-series tools
 - **Calibration wizard** - Step-by-step calibration with profile management
 - **Module bundles** - ESM, UMD, and minified builds for any project
-- **150+ tests** - Comprehensive unit, integration, E2E, and visual regression tests
+- **Comprehensive tests** - Unit, integration, E2E, accessibility, and visual regression tests
 - **Hot reload dev server** - Instant feedback during development
 
 ## 🚀 Live Demo
@@ -96,9 +96,9 @@ Use via unpkg CDN for quick prototyping:
 </script>
 ```
 
-### Option 4: Direct Download
+### Option 4: Build from Source
 
-Download `cd48.js` from the repository and include it in your HTML.
+Clone the repository and run `npm install && npm run build`; the bundles are written to `dist/`.
 
 ## ✨ Features
 
@@ -110,7 +110,7 @@ Download `cd48.js` from the repository and include it in your HTML.
 - **High-level measurements** - Rate and coincidence measurement with accidental correction
 - **Native TypeScript** - Written in TypeScript with strict mode, zero `any` types
 - **Full type inference** - Comprehensive types for all APIs
-- **Comprehensive testing** - 150+ tests with E2E and visual regression
+- **Comprehensive testing** - Unit, integration, E2E, and visual regression suites
 
 ### Advanced Analysis Tools 📊
 
@@ -165,9 +165,9 @@ Browse all examples at **[/examples/](/examples/)**
    ```bash
    # Using npm
    npm install
-   npm run dev       # Opens http://localhost:3000/examples/
+   npm run dev       # Vite dev server; open http://localhost:5173/examples/
 
-   # Or using npx (no install needed)
+   # Or serve the repository root statically (http://localhost:3000)
    npx serve .
    ```
 
@@ -362,10 +362,10 @@ The package provides multiple bundle formats:
 
 ```
 dist/
-├── cd48.esm.js          # ES Module (14.75 kB, 3.60 kB gzipped)
-├── cd48.esm.min.js      # ES Module minified (5.32 kB, 2.02 kB gzipped)
-├── cd48.umd.js          # UMD bundle (13.70 kB, 3.48 kB gzipped)
-└── cd48.umd.min.js      # UMD minified (5.27 kB, 1.98 kB gzipped)
+├── cd48.esm.js          # ES Module
+├── cd48.esm.min.js      # ES Module, minified
+├── cd48.umd.js          # UMD bundle (global `CD48`)
+└── cd48.umd.min.js      # UMD bundle, minified
 ```
 
 **Package exports:**
@@ -380,11 +380,11 @@ dist/
 }
 ```
 
-All modules (analysis, calibration, errors, validation, dev-utils) are exported from the main entry point.
+All modules (analysis, calibration, errors, validation, export, dev-utils) are exported from the main entry point.
 
 ## 🧪 Testing
 
-The project includes comprehensive testing with 150+ tests, all written in TypeScript:
+The project includes unit, integration, E2E, and visual regression tests, all written in TypeScript:
 
 ```bash
 # Unit tests
@@ -412,12 +412,11 @@ npm run test:all            # Run everything
 
 **Test Coverage:**
 
-- 150+ total tests across all suites
 - Unit tests for core functionality (TypeScript)
 - Integration tests with MockCD48 (TypeScript)
 - Performance benchmarks (TypeScript)
 - E2E tests for all 11 example pages
-- Visual regression testing (15+ screenshots)
+- Visual regression and accessibility testing
 - Error scenario testing
 - Cross-browser (Chromium, WebKit, Firefox)
 - Strict TypeScript checking with zero `any` types
@@ -441,13 +440,13 @@ npm run dev          # Start Vite dev server with hot reload
 npm run preview      # Preview production build
 ```
 
-The dev server opens automatically to `http://localhost:3000/examples/` with hot module replacement enabled.
+The dev server runs on Vite's default port (`http://localhost:5173`; browse to `/examples/`) with hot module replacement enabled.
 
 ### Building
 
 ```bash
 npm run build        # Build all bundles (ESM, UMD, minified)
-npm run docs         # Generate JSDoc documentation
+npm run docs         # Generate TypeDoc API documentation (docs/api/)
 ```
 
 ### Code Quality
@@ -456,7 +455,7 @@ npm run docs         # Generate JSDoc documentation
 
 - **Pre-commit** - Lints and formats staged files
 - **Commit-msg** - Validates conventional commits format
-- **Pre-push** - Runs all tests
+- **Pre-push** - Runs the Biome check, type check, and unit tests
 
 **Manual Commands:**
 
@@ -464,6 +463,7 @@ npm run docs         # Generate JSDoc documentation
 npm run lint         # Check code quality
 npm run lint:fix     # Fix linting issues
 npm run format       # Format all files
+npm run format:check # Biome check (format + lint) without writing
 npm run commit       # Interactive commit (guided)
 ```
 
@@ -475,9 +475,12 @@ tscd48/
 │   ├── cd48.ts                 # Main library
 │   ├── analysis.ts             # Statistical analysis tools
 │   ├── calibration.ts          # Calibration utilities
+│   ├── constants.ts            # Protocol and firmware constants
 │   ├── dev-utils.ts            # Development utilities
+│   ├── export.ts               # Data export (JSON, CSV, MAT)
 │   ├── errors.ts               # Error classes
 │   ├── validation.ts           # Input validation
+│   ├── types.ts                # Shared types
 │   └── index.ts                # Main entry point
 │
 ├── dist/                    # Built bundles (generated)
@@ -508,7 +511,9 @@ tscd48/
 ├── .github/workflows/       # CI/CD pipelines
 │   ├── ci.yml                  # Continuous integration
 │   ├── deploy.yml              # GitHub Pages deployment
-│   └── release.yml             # Automated releases
+│   ├── prerelease.yml          # Pre-release builds
+│   ├── release.yml             # Automated releases
+│   └── changelog.yml           # Changelog generation
 │
 └── docs/                    # Generated documentation
 ```
@@ -522,7 +527,8 @@ tscd48/
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
 - **[ACCESSIBILITY.md](ACCESSIBILITY.md)** - Accessibility features
 - **[tests/README.md](tests/README.md)** - Testing documentation
-- **[API Docs](docs/api/)** - Auto-generated JSDoc (run `npm run docs`)
+- **[.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md)** - Recommended branch protection and required CI checks
+- **[API Docs](docs/api/)** - Auto-generated TypeDoc (generated by `npm run docs`)
 
 ## 🌐 Browser Compatibility
 
@@ -617,6 +623,7 @@ This library interfaces with the CD48 Coincidence Counter designed and manufactu
 ## 🔗 Related Projects
 
 - [pycd48](https://github.com/OpenPhysics/pycd48) - Python interface for CD48
+- [jscd48-tmp](https://github.com/OpenPhysics/jscd48-tmp) - Archived JavaScript predecessor of this library
 - [Red Dog Physics CD48](https://www.reddogphysics.com/cd48.html) - Official hardware
 
 ---

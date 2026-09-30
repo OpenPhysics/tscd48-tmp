@@ -4,13 +4,13 @@ Thank you for your interest in contributing to tscd48! This document provides gu
 
 ## Code of Conduct
 
-By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
+Please be respectful and constructive in issues, pull requests, and reviews.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 22.22.1+ (CI runs Node 24) and npm 10+
 - A modern browser (Chrome 89+, Edge 89+, or Opera 76+) for testing
 - Git for version control
 - (Optional) A CD48 Coincidence Counter device for hardware testing
@@ -84,10 +84,11 @@ git commit -m "fix."                    # Ends with period
 
 Runs **before** pushing to remote:
 
-- ✅ Runs all tests with `npm test`
-- ✅ Ensures tests pass before pushing
+- ✅ Runs the Biome check (`npm run format:check`)
+- ✅ Runs the TypeScript type check (`npm run typecheck`)
+- ✅ Runs the unit tests (`npm test`)
 
-If tests fail, the push will be aborted.
+If any of these fail, the push will be aborted.
 
 #### Using Commitizen (Optional)
 
@@ -196,7 +197,7 @@ test: add tests for coincidence rate calculations
 - Follow the Biome configuration (`biome.json`) for linting and formatting
 - Use single quotes for strings
 - Use semicolons
-- Maximum line length: 80 characters
+- Formatting (including line width) is enforced by Biome — run `npm run format`
 
 ### Code Quality
 
@@ -212,18 +213,17 @@ test: add tests for coincidence rate calculations
 - Include parameter types and return types
 - Provide usage examples for new features
 - Update README.md if adding features
-- Update TypeScript definitions (cd48.d.ts)
 
 **Example:**
 
-```javascript
+```typescript
 /**
  * Measure count rate on a channel.
- * @param {number} channel - Channel number (0-7)
- * @param {number} duration - Measurement duration in seconds
- * @returns {Promise<Object>} Rate measurement result
+ * @param channel - Channel number (0-7)
+ * @param duration - Measurement duration in seconds
+ * @returns Rate measurement result
  */
-async measureRate(channel = 0, duration = 1.0) {
+public async measureRate(channel = 0, duration = 1.0): Promise<RateMeasurement> {
   // Implementation
 }
 ```
@@ -237,7 +237,7 @@ async measureRate(channel = 0, duration = 1.0) {
 
 **Example:**
 
-```javascript
+```typescript
 describe('measureRate', () => {
   it('should calculate rate correctly for valid channel', async () => {
     // Test implementation
@@ -269,8 +269,8 @@ npm test -- --watch
 
 ### Writing Tests
 
-- Place tests in `tests/unit/` directory
-- Name test files `*.test.js`
+- Place unit tests in `tests/unit/` (integration tests in `tests/integration/`, Playwright tests in `tests/e2e/`)
+- Name test files `*.test.ts`
 - Mock external dependencies (Web Serial API, etc.)
 - Test edge cases and error conditions
 
@@ -278,28 +278,29 @@ npm test -- --watch
 
 ```
 tscd48/
-├── cd48.js              # Main library
-├── cd48.d.ts            # TypeScript definitions
+├── src/                 # TypeScript library source (cd48.ts is the main class)
 ├── index.html           # Web interface
 ├── examples/            # Example applications
 ├── tests/               # Test files
-│   └── unit/           # Unit tests
-├── .github/            # GitHub workflows
-│   └── workflows/      # CI/CD workflows
-├── docs/               # Generated documentation
+│   ├── unit/           # Unit tests (Vitest)
+│   ├── integration/    # Integration tests with MockCD48
+│   ├── e2e/            # Playwright end-to-end tests
+│   ├── benchmarks/     # Performance benchmarks
+│   └── mocks/          # Web Serial mock
+├── .github/            # GitHub workflows, issue/PR templates
+├── docs/               # Generated API documentation (npm run docs)
 └── package.json        # Project configuration
 ```
 
 ## Adding New Features
 
-### For Library Features (cd48.js)
+### For Library Features (src/cd48.ts)
 
-1. Add the method to the `CD48` class
-2. Add JSDoc documentation
-3. Update TypeScript definitions (cd48.d.ts)
-4. Add tests in `tests/unit/cd48.test.js`
-5. Update README.md with usage examples
-6. Add example usage in `examples/` if applicable
+1. Add the method to the `CD48` class (and export any new public types from `src/index.ts`)
+2. Add TSDoc documentation
+3. Add tests in `tests/unit/cd48.test.ts`
+4. Update README.md with usage examples
+5. Add example usage in `examples/` if applicable
 
 ### For Web Interface Features
 
