@@ -37,6 +37,7 @@
     "dev": "vite",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck",
     "build": "npm run typecheck && npm run build:unminified && npm run build:minified && npm run build:types",
     "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist",
     "build:unminified": "vite build --config vite.config.build.ts",
