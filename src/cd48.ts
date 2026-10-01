@@ -947,6 +947,10 @@ class CD48 {
 
         // If we have retries left, wait and try again
         if (attempt < this.commandRetries) {
+          if (error instanceof CommandTimeoutError) {
+            // The timed-out read closed the stream; retry on a fresh port.
+            await this.reconnect();
+          }
           await this.sleep(this.retryDelay * (attempt + 1));
         }
       }
@@ -1027,16 +1031,23 @@ class CD48 {
       }
 
       // Check if we timed out
-      if (Date.now() - startTime >= timeout && response === '') {
+      if (
+        Date.now() - startTime >= timeout &&
+        (pendingRead !== null || response === '')
+      ) {
         throw new CommandTimeoutError(command, timeout);
       }
 
       return response.trim();
     } catch (error) {
-      if (
-        error instanceof CommandTimeoutError ||
-        error instanceof NotConnectedError
-      ) {
+      if (error instanceof CommandTimeoutError) {
+        // The final reader.read() may still be pending when the deadline wins.
+        // Cancel it before another command (or retry) can lose its reply.
+        await this._cleanupConnection();
+        this._setConnectionState('disconnected');
+        throw error;
+      }
+      if (error instanceof NotConnectedError) {
         throw error;
       }
       const errorMessage =

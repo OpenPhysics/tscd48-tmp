@@ -4,6 +4,7 @@ import CD48 from '../../src/cd48.js';
 
 // Import error classes
 import {
+  CommandTimeoutError,
   ConnectionError,
   FirmwareIncompatibleError,
   InvalidChannelError,
@@ -649,6 +650,17 @@ describe('CD48', () => {
       const version = await cd48.getVersion();
       expect(typeof version).toBe('string');
       expect(mocks.mockWriter.write).toHaveBeenCalledWith('v\r');
+    });
+
+    it('closes the stream when a response read remains pending at timeout', async () => {
+      mocks.mockReader.read.mockImplementation(
+        () => new Promise<{ value: string; done: boolean }>(() => {})
+      );
+
+      await expect(cd48.sendCommand('v')).rejects.toThrow(CommandTimeoutError);
+      expect(mocks.mockReader.cancel).toHaveBeenCalledOnce();
+      expect(cd48.isConnected()).toBe(false);
+      expect(cd48.getConnectionState()).toBe('disconnected');
     });
 
     it('should send getCounts command', async () => {
