@@ -24,6 +24,15 @@ export const CONNECTION_INIT_DELAY_MS = 500;
 /** Interval for read timeout checks (milliseconds) */
 export const READ_TIMEOUT_INTERVAL_MS = 100;
 
+/** How long to discard bytes already sitting in the reader before a write. */
+export const INPUT_DRAIN_MS = 15;
+
+/**
+ * After at least one line, stop when no further bytes arrive for this long.
+ * Multi-line H/P/C replies are otherwise truncated at the first terminator.
+ */
+export const RESPONSE_IDLE_GAP_MS = 50;
+
 /** Number of automatic reconnection attempts */
 export const RECONNECT_ATTEMPTS = 5;
 

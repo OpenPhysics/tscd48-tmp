@@ -91,6 +91,7 @@ export {
   InvalidVoltageError,
   NotConnectedError,
   OperationAbortedError,
+  OverflowError,
   UnsupportedBrowserError,
   ValidationError,
 } from './errors.js';
@@ -125,6 +126,7 @@ export {
   REPEAT_INTERVAL_MIN,
   VOLTAGE_MAX,
   VOLTAGE_MIN,
+  validateBinaryInput,
   validateBoolean,
   validateByte,
   // Validation functions

@@ -32,6 +32,7 @@ import {
   DEFAULT_SINGLES_B_CHANNEL,
   EXPECTED_CHANNEL_COUNT,
   EXPECTED_COUNT_RESPONSE_LENGTH,
+  INPUT_DRAIN_MS,
   MILLISECONDS_PER_SECOND,
   MIN_FIRMWARE_MAJOR,
   MIN_FIRMWARE_MINOR,
@@ -41,6 +42,7 @@ import {
   READ_TIMEOUT_INTERVAL_MS,
   RECONNECT_ATTEMPTS,
   RECONNECT_DELAY_MS,
+  RESPONSE_IDLE_GAP_MS,
   USB_VENDOR_ID,
   WEB_LOCK_NAME,
 } from './constants.js';
@@ -50,16 +52,20 @@ import {
   ConnectionError,
   DeviceSelectionCancelledError,
   FirmwareIncompatibleError,
+  InvalidChannelError,
   InvalidResponseError,
   NotConnectedError,
   OperationAbortedError,
+  OverflowError,
   UnsupportedBrowserError,
 } from './errors.js';
 import {
   byteToVoltage,
   REPEAT_INTERVAL_MAX,
   REPEAT_INTERVAL_MIN,
+  validateBinaryInput,
   validateChannel,
+  validateDuration,
   voltageToByte,
 } from './validation.js';
 
@@ -279,6 +285,7 @@ class CD48 {
   private writableStreamClosed: Promise<void> | null;
   private _lastCommandTime: number;
   private _rateLimitLock: Promise<void>;
+  private _pendingRead: Promise<ReadResult> | null;
   private _reconnecting: boolean;
   private _connectionState: ConnectionState;
   private _onDisconnect: DisconnectCallback | null;
@@ -308,6 +315,7 @@ class CD48 {
     this.writableStreamClosed = null;
     this._lastCommandTime = 0;
     this._rateLimitLock = Promise.resolve();
+    this._pendingRead = null;
     this._reconnecting = false;
     this._connectionState = 'disconnected';
     this._onDisconnect = null;
@@ -692,6 +700,10 @@ class CD48 {
   ): Promise<string> {
     validateChannel(channel);
     const { A = 0, B = 0, C = 0, D = 0 } = inputs;
+    validateBinaryInput('A', A);
+    validateBinaryInput('B', B);
+    validateBinaryInput('C', C);
+    validateBinaryInput('D', D);
     return await this.sendCommand(`S${channel}${A}${B}${C}${D}`);
   }
 
@@ -759,11 +771,11 @@ class CD48 {
    */
   public async getOverflow(): Promise<number> {
     const response = await this.sendCommand('E');
-    const overflow = Number.parseInt(response, DECIMAL_RADIX);
-    if (Number.isNaN(overflow)) {
-      throw new InvalidResponseError(response, '8-bit overflow flag');
+    const trimmed = response.trim();
+    if (!/^-?\d+$/.test(trimmed)) {
+      throw new InvalidResponseError(response, 'integer overflow flag');
     }
-    return overflow;
+    return Number.parseInt(trimmed, DECIMAL_RADIX);
   }
 
   /**
@@ -788,6 +800,7 @@ class CD48 {
     options?: MeasurementOptions
   ): Promise<RateMeasurement> {
     validateChannel(channel);
+    validateDuration(duration);
 
     // Check if already aborted
     if (options?.signal?.aborted === true) {
@@ -800,7 +813,11 @@ class CD48 {
       options?.signal
     );
     const data = await this.getCounts(false);
-    const counts = data.counts[channel] ?? 0;
+    this._assertNoOverflow(data.overflow, [channel]);
+    const counts = data.counts[channel];
+    if (counts === undefined) {
+      throw new InvalidChannelError(channel);
+    }
     const rate = counts / duration;
 
     // Poisson uncertainty: sigma_N = sqrt(N)
@@ -842,6 +859,11 @@ class CD48 {
       signal,
     } = options;
 
+    validateDuration(duration);
+    validateChannel(singlesAChannel);
+    validateChannel(singlesBChannel);
+    validateChannel(coincidenceChannel);
+
     // Check if already aborted
     if (signal?.aborted === true) {
       throw new OperationAbortedError('measureCoincidenceRate');
@@ -850,10 +872,25 @@ class CD48 {
     await this.clearCounts();
     await this.sleepWithAbort(duration * MILLISECONDS_PER_SECOND, signal);
     const data = await this.getCounts(false);
+    this._assertNoOverflow(data.overflow, [
+      singlesAChannel,
+      singlesBChannel,
+      coincidenceChannel,
+    ]);
 
-    const singlesA = data.counts[singlesAChannel] ?? 0;
-    const singlesB = data.counts[singlesBChannel] ?? 0;
-    const coincidences = data.counts[coincidenceChannel] ?? 0;
+    const singlesA = data.counts[singlesAChannel];
+    const singlesB = data.counts[singlesBChannel];
+    const coincidences = data.counts[coincidenceChannel];
+    if (
+      singlesA === undefined ||
+      singlesB === undefined ||
+      coincidences === undefined
+    ) {
+      throw new InvalidResponseError(
+        data.counts.join(' '),
+        'count for each requested channel'
+      );
+    }
 
     const rateA = singlesA / duration;
     const rateB = singlesB / duration;
@@ -966,94 +1003,206 @@ class CD48 {
    * @returns Response from device
    */
   private async _sendCommandOnce(command: string): Promise<string> {
-    if (!this.isConnected()) {
-      // Attempt auto-reconnect if enabled
-      if (this.autoReconnect) {
-        const reconnected = await this._attemptAutoReconnect();
-        if (!reconnected) {
+    // Hold one lock from before the write through the framed read. The
+    // rate-limit sleep stays inside that lock and must not release early:
+    // useWebLocks defaults to false, so this promise chain is the only
+    // mutual exclusion between overlapping sendCommand calls.
+    return this._withCommandLock(async () => {
+      if (!this.isConnected()) {
+        if (this.autoReconnect) {
+          const reconnected = await this._attemptAutoReconnect();
+          if (!reconnected) {
+            throw new NotConnectedError('sendCommand');
+          }
+        } else {
           throw new NotConnectedError('sendCommand');
         }
+      }
+
+      try {
+        if (this.writer === null || this.reader === null) {
+          throw new NotConnectedError('sendCommand');
+        }
+
+        await this._drainPendingInput();
+        await this.writer.write(`${command}\r`);
+        await this.sleep(this.commandDelay);
+        return await this._readFramedResponse(command);
+      } catch (error) {
+        if (error instanceof CommandTimeoutError) {
+          // The final reader.read() may still be pending when the deadline wins.
+          // Cancel it before another command (or retry) can lose its reply.
+          await this._cleanupConnection();
+          this._setConnectionState('disconnected');
+          throw error;
+        }
+        if (error instanceof NotConnectedError) {
+          throw error;
+        }
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        const errorCause = error instanceof Error ? error : undefined;
+        throw new CommunicationError(errorMessage, errorCause);
+      }
+    });
+  }
+
+  /**
+   * Reject a rate when the overflow bit for any measured channel is set.
+   */
+  private _assertNoOverflow(
+    overflow: number,
+    channels: readonly number[]
+  ): void {
+    const overflowed = channels.filter(
+      (channel) => (overflow & (1 << channel)) !== 0
+    );
+    if (overflowed.length > 0) {
+      throw new OverflowError(overflowed, overflow);
+    }
+  }
+
+  /**
+   * Start a reader.read() if one is not already in flight.
+   * A catch handler is attached immediately so a later cancel cannot surface
+   * as an unhandled rejection.
+   */
+  private _armPendingRead(): Promise<ReadResult> {
+    if (this._pendingRead === null) {
+      if (this.reader === null) {
+        this._pendingRead = Promise.resolve({ value: '', done: true });
       } else {
-        throw new NotConnectedError('sendCommand');
+        const pending: Promise<ReadResult> = this.reader
+          .read()
+          .then((result) => ({
+            value: result.value ?? '',
+            done: result.done,
+          }));
+        pending.catch(() => {});
+        this._pendingRead = pending;
       }
     }
+    return this._pendingRead;
+  }
 
-    // Apply rate limiting
-    await this._applyRateLimit();
-
-    try {
-      if (this.writer === null || this.reader === null) {
-        throw new NotConnectedError('sendCommand');
-      }
-
-      // Clear any pending data
-      await this.writer.write(`${command}\r`);
-      await this.sleep(this.commandDelay);
-
-      // Read response with timeout. A single reader.read() call is kept
-      // pending across loop iterations - reissuing read() while an earlier
-      // call is still outstanding would queue both on the stream, and any
-      // data that arrives resolves the OLDEST queued read first, silently
-      // dropping it since nothing awaits that earlier promise anymore.
-      let response = '';
-      const startTime = Date.now();
-      const timeout = COMMAND_TIMEOUT_MS;
-      let pendingRead: Promise<ReadResult> | null = null;
-
-      while (Date.now() - startTime < timeout) {
-        pendingRead ??= this.reader
-          .read()
-          .then((result) => ({ value: result.value ?? '', done: result.done }));
-
-        const timeoutPromise: Promise<ReadResult> = this.sleep(
-          READ_TIMEOUT_INTERVAL_MS
-        ).then(() => ({
+  /**
+   * Race the in-flight read against a deadline without starting a second read.
+   */
+  private async _readFor(waitMs: number): Promise<ReadResult> {
+    const pending = this._armPendingRead();
+    const result = await Promise.race([
+      pending,
+      this.sleep(Math.max(0, waitMs)).then(
+        (): ReadResult => ({
           value: '',
           done: false,
           timeout: true,
-        }));
+        })
+      ),
+    ]);
+    if (result.timeout !== true) {
+      this._pendingRead = null;
+    }
+    return result;
+  }
 
-        const result = await Promise.race([pendingRead, timeoutPromise]);
-
-        if (result.timeout === true) {
-          // The read is still outstanding; keep racing the same promise.
-          continue;
-        }
-        pendingRead = null;
-
-        if (result.done) break;
-        if (result.value !== '') response += result.value;
-
-        // Check if we have a complete response
-        if (response.includes('\r') || response.includes('\n')) {
-          break;
-        }
+  /**
+   * Drop bytes already buffered before this command's write.
+   * A read that does not finish in time is kept and reused so it cannot
+   * swallow the response that follows the write.
+   */
+  private async _drainPendingInput(): Promise<void> {
+    const deadline = Date.now() + INPUT_DRAIN_MS;
+    while (Date.now() < deadline) {
+      const remaining = Math.max(1, deadline - Date.now());
+      const result = await this._readFor(remaining);
+      if (result.timeout === true || result.done || result.value === '') {
+        return;
       }
+    }
+  }
 
-      // Check if we timed out
+  /**
+   * Read until an idle gap after at least one line, or throw on timeout.
+   * A partial buffer is never returned when the overall deadline expires.
+   */
+  private async _readFramedResponse(command: string): Promise<string> {
+    let response = '';
+    let sawLine = false;
+    let lastDataAt = Date.now();
+    const started = Date.now();
+
+    while (Date.now() - started < COMMAND_TIMEOUT_MS) {
+      const remaining = COMMAND_TIMEOUT_MS - (Date.now() - started);
+      if (remaining <= 0) break;
+
+      const idleFor = Date.now() - lastDataAt;
       if (
-        Date.now() - startTime >= timeout &&
-        (pendingRead !== null || response === '')
+        sawLine &&
+        idleFor >= RESPONSE_IDLE_GAP_MS &&
+        this._pendingRead === null
       ) {
-        throw new CommandTimeoutError(command, timeout);
+        return response.trim();
       }
 
-      return response.trim();
-    } catch (error) {
-      if (error instanceof CommandTimeoutError) {
-        // The final reader.read() may still be pending when the deadline wins.
-        // Cancel it before another command (or retry) can lose its reply.
-        await this._cleanupConnection();
-        this._setConnectionState('disconnected');
-        throw error;
+      const waitMs = sawLine
+        ? Math.min(remaining, Math.max(1, RESPONSE_IDLE_GAP_MS - idleFor))
+        : Math.min(remaining, READ_TIMEOUT_INTERVAL_MS);
+
+      const result = await this._readFor(waitMs);
+      if (result.timeout === true) {
+        if (sawLine && Date.now() - lastDataAt >= RESPONSE_IDLE_GAP_MS) {
+          return response.trim();
+        }
+        continue;
       }
-      if (error instanceof NotConnectedError) {
-        throw error;
+      if (result.done) break;
+
+      if (result.value !== '') {
+        response += result.value;
+        lastDataAt = Date.now();
+        if (response.includes('\r') || response.includes('\n')) {
+          sawLine = true;
+        }
+        continue;
       }
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      const errorCause = error instanceof Error ? error : undefined;
-      throw new CommunicationError(errorMessage, errorCause);
+
+      if (sawLine) {
+        const gap = RESPONSE_IDLE_GAP_MS - (Date.now() - lastDataAt);
+        if (gap > 0) {
+          await this.sleep(
+            Math.min(
+              gap,
+              Math.max(0, COMMAND_TIMEOUT_MS - (Date.now() - started))
+            )
+          );
+        }
+        if (Date.now() - started >= COMMAND_TIMEOUT_MS) break;
+        const follow = await this._readFor(1);
+        if (follow.timeout === true || follow.done || follow.value === '') {
+          return response.trim();
+        }
+        response += follow.value;
+        lastDataAt = Date.now();
+        continue;
+      }
+
+      await this.sleep(
+        Math.min(READ_TIMEOUT_INTERVAL_MS, Math.max(1, remaining))
+      );
+    }
+
+    this._abandonPendingRead();
+    throw new CommandTimeoutError(command, COMMAND_TIMEOUT_MS);
+  }
+
+  /**
+   * Attach a rejection handler before dropping an in-flight read.
+   */
+  private _abandonPendingRead(): void {
+    if (this._pendingRead !== null) {
+      this._pendingRead.catch(() => {});
+      this._pendingRead = null;
     }
   }
 
@@ -1152,6 +1301,7 @@ class CD48 {
    * Clean up connection resources.
    */
   private async _cleanupConnection(): Promise<void> {
+    this._abandonPendingRead();
     if (this.reader !== null) {
       try {
         await this.reader.cancel();
@@ -1193,33 +1343,30 @@ class CD48 {
   }
 
   /**
-   * Apply rate limiting between commands using a mutex pattern.
-   * This prevents race conditions when multiple commands are queued.
+   * Serialize command I/O. The rate-limit gap is waited inside the lock and
+   * the lock is released only after the callback (write and framed read) finishes.
    */
-  private async _applyRateLimit(): Promise<void> {
-    // Chain onto the existing lock promise to serialize rate limiting
+  private async _withCommandLock<T>(fn: () => Promise<T>): Promise<T> {
     const previousLock = this._rateLimitLock;
-
-    // Create a new promise that will resolve when this command's rate limiting is done
     let resolveCurrentLock: (() => void) | undefined;
     this._rateLimitLock = new Promise((resolve) => {
       resolveCurrentLock = resolve;
     });
 
     try {
-      // Wait for any previous rate-limited command to complete
       await previousLock;
-
-      // Apply rate limiting if configured
       if (this.rateLimitMs > 0) {
         const elapsed = Date.now() - this._lastCommandTime;
         if (elapsed < this.rateLimitMs) {
           await this.sleep(this.rateLimitMs - elapsed);
         }
       }
-      this._lastCommandTime = Date.now();
+      try {
+        return await fn();
+      } finally {
+        this._lastCommandTime = Date.now();
+      }
     } finally {
-      // Release the lock for the next command
       if (resolveCurrentLock !== undefined) {
         resolveCurrentLock();
       }

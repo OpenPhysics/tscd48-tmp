@@ -138,6 +138,24 @@ export class InvalidVoltageError extends ValidationError {
 }
 
 /**
+ * Error thrown when a measured channel's overflow bit is set.
+ * The raw count would understate the rate.
+ */
+export class OverflowError extends CD48Error {
+  public override readonly name: string = 'OverflowError';
+  public readonly channels: readonly number[];
+  public readonly overflow: number;
+
+  constructor(channels: readonly number[], overflow: number) {
+    super(
+      `Counter overflow on channel(s) ${channels.join(', ')}; rate would be understated (overflow=${overflow})`
+    );
+    this.channels = channels;
+    this.overflow = overflow;
+  }
+}
+
+/**
  * Error thrown when communication with device fails
  */
 export class CommunicationError extends CD48Error {
