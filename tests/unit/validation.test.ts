@@ -25,6 +25,7 @@ import {
   REPEAT_INTERVAL_MIN,
   VOLTAGE_MAX,
   VOLTAGE_MIN,
+  validateBinaryInput,
   validateBoolean,
   validateByte,
   // Validation functions
@@ -55,6 +56,25 @@ describe('Validation Constants', () => {
   it('should have correct repeat interval range', () => {
     expect(REPEAT_INTERVAL_MIN).toBe(100);
     expect(REPEAT_INTERVAL_MAX).toBe(65535);
+  });
+});
+
+describe('validateBinaryInput', () => {
+  it('should accept 0 and 1', () => {
+    expect(() => validateBinaryInput('A', 0)).not.toThrow();
+    expect(() => validateBinaryInput('B', 1)).not.toThrow();
+  });
+
+  it('should reject non-numbers', () => {
+    expect(() => validateBinaryInput('A', Number.NaN)).toThrow(ValidationError);
+    expect(() => validateBinaryInput('A', '1' as unknown as number)).toThrow(
+      ValidationError
+    );
+  });
+
+  it('should reject values other than 0 or 1', () => {
+    expect(() => validateBinaryInput('C', 2)).toThrow(ValidationError);
+    expect(() => validateBinaryInput('D', 1.5)).toThrow(ValidationError);
   });
 });
 

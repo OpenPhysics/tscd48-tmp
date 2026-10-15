@@ -11,6 +11,7 @@ import {
   InvalidVoltageError,
   NotConnectedError,
   OperationAbortedError,
+  OverflowError,
   UnsupportedBrowserError,
   ValidationError,
 } from '../../src/errors.js';
@@ -146,6 +147,18 @@ describe('CD48 Error Classes', () => {
       expect(error.message).toContain('read failed');
       expect(error.name).toBe('CommunicationError');
       expect(error.originalError).toBeUndefined();
+      expect(error instanceof CD48Error).toBe(true);
+    });
+  });
+
+  describe('OverflowError', () => {
+    it('should name the overflowed channels and the raw flag', () => {
+      const error = new OverflowError([0, 3], 9);
+      expect(error.message).toContain('channel(s) 0, 3');
+      expect(error.message).toContain('overflow=9');
+      expect(error.name).toBe('OverflowError');
+      expect(error.channels).toEqual([0, 3]);
+      expect(error.overflow).toBe(9);
       expect(error instanceof CD48Error).toBe(true);
     });
   });
