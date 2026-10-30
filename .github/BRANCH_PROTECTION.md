@@ -15,7 +15,7 @@ The following CI jobs must pass before merging to `main` (defined in `.github/wo
 
 Everything that used to run as separate jobs — lint, typecheck, test, and build — now runs as
 sequential steps inside the single **verify** job, so there is one status check for all of it
-instead of four. There is also no longer a Node-version test matrix; CI runs on Node 24 only
+instead of four. There is also no longer a Node-version test matrix; CI runs on Node 26 only
 (the version declared in `package.json` `engines`).
 
 ## Recommended GitHub Branch Protection Settings
@@ -152,5 +152,5 @@ If a status check doesn't appear in the list:
 ### CI failing but local passes
 
 1. Ensure dependencies are up to date: `npm ci`
-2. Check Node.js version matches CI (24 — there is no longer a multi-version test matrix)
+2. Check Node.js version matches CI (26 — there is no longer a multi-version test matrix)
 3. Run the exact CI command locally
